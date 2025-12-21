@@ -1,0 +1,33 @@
+# 是否开启请求日志
+requestLog: true
+# 临时目录路径
+tmpDir: ./tmp
+# 日志目录路径
+logDir: ./logs
+# 日志写入间隔（毫秒）
+logWriteInterval: 200
+# 日志文件有效期（毫秒）
+logFileExpires: 2626560000
+# 临时文件有效期（毫秒）
+tmpFileExpires: 86400000
+# 日志级别
+log_level: info
+
+# 代理服务器配置
+proxy:
+  # 是否启用代理
+  enabled: false
+  # 代理服务器地址
+  host: "127.0.0.1"
+  # 代理服务器端口
+  port: 7890
+  # 代理类型：http, https, socks5
+  type: "http"
+  # 代理认证（可选）
+  auth:
+    username: ""
+    password: ""
+  # 不使用代理的域名列表（支持通配符）
+  bypass: ["localhost", "127.0.0.1", "*.local"]
+  # 代理连接超时时间（毫秒）
+  timeout: 10000
