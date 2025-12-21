@@ -94,15 +94,31 @@ jobs:
         id: pick
         shell: bash
         run: |
-          TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          # 获取所有标签并按版本号排序
+          TAG=$(git describe --tags --abbrev=0 `git rev-list --tags --max-count=1` 2>/dev/null || echo "")
+
+          # 如果上面的命令失败，尝试另一种方法
           if [[ -z "$TAG" ]]; then
-            echo "No tags found matching pattern v*"
+            TAG=$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" | sort -V | tail -n 1)
+          fi
+
+          # 最后尝试简单的方法
+          if [[ -z "$TAG" ]]; then
+            TAG=$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | tail -n 1)
+          fi
+
+          if [[ -z "$TAG" ]]; then
+            echo "No tags found matching pattern vX.Y.Z"
+            echo "Available tags:"
+            git tag -l
             exit 1
           fi
+
           if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Latest tag is '$TAG' but not pure vX.Y.Z. Adjust logic if you want to allow pre-releases."
             exit 1
           fi
+
           VER="${TAG#v}"
           echo "FULL=$TAG" >> "$GITHUB_OUTPUT"
           echo "VER=$VER" >> "$GITHUB_OUTPUT"
