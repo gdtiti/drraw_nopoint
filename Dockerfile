@@ -53,21 +53,21 @@ COPY --from=builder --chown=jimeng:nodejs /app/dist ./dist
 COPY --from=builder --chown=jimeng:nodejs /app/configs ./configs
 
 # 创建应用需要的目录并设置权限
-RUN mkdir -p /app/logs /app/tmp && \
-    chown -R jimeng:nodejs /app/logs /app/tmp
+RUN mkdir -p /app/logs /app/tmp /app/data && \
+    chown -R jimeng:nodejs /app/logs /app/tmp /app/data
 
 # 设置环境变量
-ENV SERVER_PORT=5100
+ENV SERVER_PORT=7860
 
 # 切换到非root用户
 USER jimeng
 
 # 暴露端口
-EXPOSE 5100
+EXPOSE 7860
 
 # 健康检查
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget -q --spider http://localhost:5100/ping
+    CMD wget -q --spider http://localhost:7860/ping
 
 # 启动应用
 CMD ["yarn", "start"]
