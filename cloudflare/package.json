@@ -1,0 +1,29 @@
+{
+  "name": "jimeng-api-cloudflare-proxy",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker proxy for Jimeng API with IP optimization and load balancing",
+  "main": "worker.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test": "node ip-tester.js",
+    "tail": "wrangler tail",
+    "login": "wrangler login"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "proxy",
+    "api",
+    "load-balancer",
+    "ip-optimization"
+  ],
+  "author": "Jimeng API Team",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

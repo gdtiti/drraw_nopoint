@@ -322,7 +322,7 @@ export async function request(
         url: fullUrl,
         params: requestParams,
         headers: headers,
-        timeout: 45000, // 增加超时时间到45秒
+        timeout: 900000, // 15分钟超时 - 与SmartPoller和前端超时匹配
         validateStatus: () => true, // 允许任何状态码
         ..._.omit(options, "params", "headers"),
         ...proxyConfig, // 合并代理配置
