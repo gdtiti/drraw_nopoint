@@ -554,8 +554,8 @@ const swaggerOptions = {
     }
   },
   apis: [
-    path.resolve(process.cwd(), 'src/api/routes/*.ts'),
-    path.resolve(process.cwd(), 'src/lib/swagger-docs/*.js')
+    path.resolve(process.cwd(), 'src/lib/swagger-docs/*.js'),
+    path.resolve(process.cwd(), 'src/lib/swagger-docs/*.ts')
   ],
   // 添加自定义解析器配置
   customResourcePath: '/{path}',
