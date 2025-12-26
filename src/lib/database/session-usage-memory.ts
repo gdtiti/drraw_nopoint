@@ -28,9 +28,9 @@ class MemoryUsageDB {
   private dataDir: string;
   private dataFile: string;
   private readonly DAILY_LIMITS = {
-    image: 10,
-    video: 2,
-    avatar: 1
+    image: 999999,
+    video: 999999,
+    avatar: 999999
   };
 
   constructor(dataDir?: string) {
