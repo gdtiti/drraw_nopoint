@@ -11,7 +11,7 @@ RUN apk add --no-cache python3 make g++
 COPY package.json yarn.lock ./
 
 # 安装所有依赖（包括devDependencies）
-RUN yarn install --frozen-lockfile --registry https://registry.npmmirror.com/ --ignore-engines
+RUN yarn install --frozen-lockfile --ignore-engines
 
 # 复制源代码
 COPY . .
@@ -45,7 +45,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY yarn.lock ./
 
 # 只安装生产依赖
-RUN yarn install --frozen-lockfile --production --registry https://registry.npmmirror.com/ --ignore-engines && \
+RUN yarn install --frozen-lockfile --production --ignore-engines && \
     yarn cache clean
 
 # 从构建阶段复制构建产物
