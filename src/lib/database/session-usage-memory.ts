@@ -28,9 +28,9 @@ class MemoryUsageDB {
   private dataDir: string;
   private dataFile: string;
   private readonly DAILY_LIMITS = {
-    image: 10,
-    video: 2,
-    avatar: 1
+    image: 50,
+    video: 10,
+    avatar: 5
   };
 
   constructor(dataDir?: string) {
@@ -64,6 +64,7 @@ class MemoryUsageDB {
     allowed: boolean;
     remaining: number;
     current: number;
+    limit: number;
   }> {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const key = `${sessionId}_${today}`;
@@ -84,6 +85,8 @@ class MemoryUsageDB {
       this.data.set(key, usage);
       await this.saveData();
     }
+    
+    // console.log(`[SessionUsage] Check ${type}: sessionId=${sessionId}, key=${key}, current=${this.getCurrentCount(usage, type)}, limit=${this.DAILY_LIMITS[type]}`);
 
     const currentCount = this.getCurrentCount(usage, type);
     const limit = this.DAILY_LIMITS[type];
@@ -92,7 +95,8 @@ class MemoryUsageDB {
     return {
       allowed: currentCount < limit,
       remaining,
-      current: currentCount
+      current: currentCount,
+      limit
     };
   }
 

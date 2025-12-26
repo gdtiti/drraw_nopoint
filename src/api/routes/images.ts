@@ -43,6 +43,7 @@ export default {
         intelligent_ratio: intelligentRatio,
         sample_strength: sampleStrength,
         response_format,
+        session_id,
       } = request.body;
       const finalModel = _.defaultTo(model, DEFAULT_IMAGE_MODEL);
 
@@ -53,7 +54,7 @@ export default {
         sampleStrength,
         negativePrompt,
         intelligentRatio,
-      }, token);
+      }, token, session_id);
       let data = [];
       if (responseFormat == "b64_json") {
         data = (
@@ -152,6 +153,7 @@ export default {
         intelligent_ratio: intelligentRatio,
         sample_strength: sampleStrength,
         response_format,
+        session_id,
       } = request.body;
       const finalModel = _.defaultTo(model, DEFAULT_IMAGE_MODEL);
 
@@ -171,7 +173,7 @@ export default {
         sampleStrength: finalSampleStrength,
         negativePrompt,
         intelligentRatio: finalIntelligentRatio,
-      }, token);
+      }, token, session_id);
 
       
       logger.info(`图像合成结果: 成功生成 ${resultUrls.length} 张合成图片`);

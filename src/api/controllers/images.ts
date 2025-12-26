@@ -21,6 +21,7 @@ import {
   ResolutionResult,
 } from "@/api/builders/payload-builder.ts";
 import { sessionUsageDB } from "@/lib/database/session-usage-memory.ts";
+import crypto from "crypto";
 
 export const DEFAULT_MODEL = DEFAULT_IMAGE_MODEL;
 export const DEFAULT_MODEL_US = DEFAULT_IMAGE_MODEL_US;
@@ -34,14 +35,9 @@ export interface ModelResult {
  * Create a consistent session_id from refresh_token
  */
 function createSessionIdFromToken(token: string): string {
-  // Simple hash function - in production, you might want to use crypto
-  let hash = 0;
-  for (let i = 0; i < token.length; i++) {
-    const char = token.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return `session_${Math.abs(hash)}`;
+  // 使用 MD5 确保哈希唯一性，避免不同 token 碰撞导致 session_id 相同
+  const hash = crypto.createHash('md5').update(token).digest('hex');
+  return `session_${hash.substring(0, 16)}`;
 }
 
 /**
@@ -127,7 +123,7 @@ export async function generateImageComposition(
   const usageCheck = await sessionUsageDB.checkUsageLimit(effectiveSessionId, 'image');
   if (!usageCheck.allowed) {
     throw new APIException(EX.API_IMAGE_GENERATION_FAILED,
-      `今日图片生成次数已达上限 (${usageCheck.current}/10)。请明天再试。`);
+      `今日图片生成次数已达上限 (${usageCheck.current}/${usageCheck.limit})。请明天再试。`);
   }
 
   // 使用 payload-builder 处理分辨率
@@ -345,7 +341,7 @@ export async function generateImages(
   const usageCheck = await sessionUsageDB.checkUsageLimit(effectiveSessionId, 'image');
   if (!usageCheck.allowed) {
     throw new APIException(EX.API_IMAGE_GENERATION_FAILED,
-      `今日图片生成次数已达上限 (${usageCheck.current}/10)。请明天再试。`);
+      `今日图片生成次数已达上限 (${usageCheck.current}/${usageCheck.limit})。请明天再试。`);
   }
 
   // 执行图片��成
