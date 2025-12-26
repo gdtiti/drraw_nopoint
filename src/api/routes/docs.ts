@@ -17,7 +17,6 @@ function generateSwaggerUiHtml(specUrl: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>即梦 API - 在线文档</title>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui.css" />
-  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui.css" />
   <style>
     html {
       box-sizing: border-box;

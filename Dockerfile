@@ -51,6 +51,7 @@ RUN yarn install --frozen-lockfile --production --ignore-engines && \
 # 从构建阶段复制构建产物
 COPY --from=builder --chown=jimeng:nodejs /app/dist ./dist
 COPY --from=builder --chown=jimeng:nodejs /app/configs ./configs
+COPY --from=builder --chown=jimeng:nodejs /app/src/lib/swagger-docs ./src/lib/swagger-docs
 
 # 创建应用需要的目录并设置权限
 RUN mkdir -p /app/logs /app/tmp /app/data && \
