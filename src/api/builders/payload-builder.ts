@@ -151,22 +151,16 @@ export function buildCoreParam(options: BuildCoreParamOptions) {
     model,
     prompt: `${promptPrefix}${prompt}`,
     sample_strength: sampleStrength,
+    image_ratio: resolution.imageRatio,
     large_image_info: {
       type: "",
       id: util.uuid(),
-      min_version: DRAFT_MIN_VERSION,
       height: resolution.height,
       width: resolution.width,
       resolution_type: resolution.resolutionType,
     },
     intelligent_ratio: effectiveIntelligentRatio,
   };
-
-  if (mode === "img2img") {
-    coreParam.image_ratio = resolution.imageRatio;
-  } else if (!effectiveIntelligentRatio) {
-    coreParam.image_ratio = resolution.imageRatio;
-  }
 
   if (negativePrompt !== undefined) {
     coreParam.negative_prompt = negativePrompt;
@@ -308,11 +302,11 @@ export function buildDraftContent({
       ability_list: abilityList,
       prompt_placeholder_info_list: promptPlaceholderInfoList,
       postedit_param: posteditParam,
-    };
-    abilities.gen_option = {
-      type: "",
-      id: util.uuid(),
-      generate_all: false,
+      gen_option: {
+        type: "",
+        id: util.uuid(),
+        generate_all: false,
+      },
     };
   }
 
