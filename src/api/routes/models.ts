@@ -9,7 +9,37 @@ export default {
             return {
                 "data": [
                     {
+                        "id": "nanobanana",
+                        "object": "model",
+                        "owned_by": "jimeng-api"
+                    },
+                    {
+                        "id": "nanobananapro",
+                        "object": "model",
+                        "owned_by": "jimeng-api"
+                    },
+                    {
                         "id": "jimeng",
+                        "object": "model",
+                        "owned_by": "jimeng-api"
+                    },
+                    {
+                        "id": "jimeng-4.5",
+                        "object": "model",
+                        "owned_by": "jimeng-api"
+                    },
+                    {
+                        "id": "jimeng-4.0",
+                        "object": "model",
+                        "owned_by": "jimeng-api"
+                    },
+                    {
+                        "id": "jimeng-3.0",
+                        "object": "model",
+                        "owned_by": "jimeng-api"
+                    },
+                    {
+                        "id": "jimeng-3.0",
                         "object": "model",
                         "owned_by": "jimeng-api"
                     },

@@ -7,8 +7,11 @@ import models from './models.ts';
 import videos from './videos.ts';
 import usage from './usage.ts';
 import proxy from './proxy.ts';
+import async from './async.ts';
+import docs from './docs.ts';
 
 export default [
+    docs,  // 将 docs 路由放在最前面，确保优先匹配
     {
         get: {
             '/': async () => {
@@ -26,7 +29,8 @@ export default [
                         models: '/v1/models',
                         health: '/ping',
                         usage: '/usage',
-                        proxy: '/proxy'
+                        proxy: '/proxy',
+                        docs: '/docs'
                     }
                 };
             }
@@ -39,5 +43,6 @@ export default [
     models,
     videos,
     usage,
-    proxy
+    proxy,
+    async
 ];

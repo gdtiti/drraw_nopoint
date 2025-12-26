@@ -154,6 +154,12 @@ export async function generateImageComposition(
       }
       uploadedImageIds.push(imageId);
       logger.info(`图片 ${i + 1}/${imageCount} 上传成功: ${imageId}`);
+
+      // 多图片上传时添加间隔，避免服务器压力
+      if (i < imageCount - 1) {
+        logger.info(`等待 2 秒后上传下一张图片...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     } catch (error) {
       logger.error(`图片 ${i + 1}/${imageCount} 上传失败: ${error.message}`);
       throw new APIException(EX.API_IMAGE_GENERATION_FAILED, `图片上传失败: ${error.message}`);
@@ -292,7 +298,7 @@ export async function generateImageComposition(
     throw new APIException(EX.API_IMAGE_GENERATION_FAILED, `图生图失败: item_list有 ${item_list.length} 个项目，但无法提取任何图片URL`);
   }
 
-  logger.info(`图生图结果: 成功生成 ${resultImageUrls.length} 张图片，总耗��� ${pollingResult.elapsedTime} 秒，最终状态: ${pollingResult.status}`);
+  logger.info(`图生图结果: 成功生成 ${resultImageUrls.length} 张图片，总耗时 ${pollingResult.elapsedTime} 秒，最终状态: ${pollingResult.status}`);
 
   // 如果生成成功，增加使用计数
   try {
@@ -325,7 +331,8 @@ export async function generateImages(
     intelligentRatio?: boolean;
   },
   refreshToken: string,
-  sessionId?: string
+  sessionId?: string,
+  progressCallback?: (progress: number) => void
 ) {
   const regionInfo = parseRegionFromToken(refreshToken);
   const { model, userModel } = getModel(_model, regionInfo.isInternational);
@@ -341,8 +348,8 @@ export async function generateImages(
       `今日图片生成次数已达上限 (${usageCheck.current}/10)。请明天再试。`);
   }
 
-  // 执行图片生成
-  const result = await generateImagesInternal(userModel, prompt, { ratio, resolution, sampleStrength, negativePrompt, intelligentRatio }, refreshToken);
+  // 执行图片��成
+  const result = await generateImagesInternal(userModel, prompt, { ratio, resolution, sampleStrength, negativePrompt, intelligentRatio }, refreshToken, progressCallback);
 
   // 如果生成成功，增加使用计数
   try {
@@ -374,7 +381,8 @@ async function generateImagesInternal(
     negativePrompt?: string;
     intelligentRatio?: boolean;
   },
-  refreshToken: string
+  refreshToken: string,
+  progressCallback?: (progress: number) => void
 ) {
   if (typeof prompt !== 'string') {
     logger.error(`提示词类型错误: ${typeof prompt}, 期望string类型`);

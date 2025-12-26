@@ -15,18 +15,18 @@ log_level: info
 # 代理服务器配置
 proxy:
   # 是否启用代理
-  enabled: false
+  enabled: true
   # 代理服务器地址
   host: "127.0.0.1"
   # 代理服务器端口
   port: 10810
   # 代理类型：http, https, socks5
-  type: "http"
+  type: "socks5"
   # 代理认证（可选）
   auth:
     username: ""
     password: ""
   # 不使用代理的域名列表（支持通配符）
-  bypass: ["localhost", "127.0.0.1", "*.local"]
+  bypass: []
   # 代理连接超时时间（毫秒）
   timeout: 10000

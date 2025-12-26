@@ -35,7 +35,7 @@ export class RegionUtils {
       return BASE_URL_IMAGEX_HK;
     }
 
-    return 'https://imagex.bytedanceapi.com';
+    return process.env.IMAGEX_CN_MIRROR || 'https://imagex.bytedanceapi.com';
   }
 
   /**

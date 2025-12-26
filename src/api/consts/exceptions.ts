@@ -8,6 +8,10 @@ export default {
     API_CHAT_STREAM_PUSHING: [-2005, '已有对话流正在输出'],
     API_CONTENT_FILTERED: [-2006, '内容由于合规问题已被阻止生成'],
     API_IMAGE_GENERATION_FAILED: [-2007, '图像生成失败'],
-    API_VIDEO_GENERATION_FAILED: [-2008, '视频生成失败'],
+    API_VIDEO_GENERATION_FAILED: [-2008, '视频生成失���'],
     API_IMAGE_GENERATION_INSUFFICIENT_POINTS: [-2009, '即梦积分不足'],
+    API_TASK_NOT_FOUND: [-2010, '任务不存在'],
+    API_TASK_NOT_COMPLETED: [-2011, '任务尚未完成'],
+    API_TASK_CANCEL_FAILED: [-2012, '无法取消任务'],
+    API_TASK_DELETE_FAILED: [-2013, '无法删除任务'],
 }

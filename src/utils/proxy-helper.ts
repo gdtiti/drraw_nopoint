@@ -1,5 +1,6 @@
 import { ProxyConfig } from '@/lib/configs/system-config';
 import { AxiosRequestConfig } from 'axios';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 import _ from 'lodash';
 
 /**
@@ -8,6 +9,7 @@ import _ from 'lodash';
 export class ProxyHelper {
     private static instance: ProxyHelper;
     private config: ProxyConfig;
+    private static socksAgent: any = null;
 
     private constructor(config: ProxyConfig) {
         this.config = config;
@@ -68,27 +70,41 @@ export class ProxyHelper {
             return {};
         }
 
-        // 构建代理配置
-        const proxyConfig: any = {
-            protocol: this.config.type,
-            host: this.config.host,
-            port: this.config.port,
-        };
-
-        // 添加认证信息
-        if (this.config.auth.username && this.config.auth.password) {
-            proxyConfig.auth = {
-                username: this.config.auth.username,
-                password: this.config.auth.password
-            };
-        }
-
         console.log(`Using proxy: ${this.config.type}://${this.config.host}:${this.config.port}`);
 
-        return {
-            proxy: proxyConfig,
-            timeout: this.config.timeout
-        };
+        // 创建或复用SOCKS5代理agent
+        if (this.config.type === 'socks5') {
+            // SOCKS5代理
+            const proxyOptions = `socks5://${this.config.auth.username && this.config.auth.password ?
+                `${this.config.auth.username}:${this.config.auth.password}@` : ''}${this.config.host}:${this.config.port}`;
+
+            // 复用agent以提高性能
+            if (!ProxyHelper.socksAgent || ProxyHelper.socksAgent.proxyOptions !== proxyOptions) {
+                try {
+                    ProxyHelper.socksAgent = new SocksProxyAgent(proxyOptions, {
+                        keepAlive: true,
+                        keepAliveMsecs: 30000, // 30秒保持连接
+                        maxSockets: 10,
+                        maxFreeSockets: 5
+                    });
+                    ProxyHelper.socksAgent.proxyOptions = proxyOptions;
+                    console.log(`Created new SOCKS5 agent: ${this.config.host}:${this.config.port}`);
+                } catch (error) {
+                    console.error(`Failed to create SOCKS5 agent: ${error.message}`);
+                    return {};
+                }
+            } else {
+                console.log(`Reusing SOCKS5 agent: ${this.config.host}:${this.config.port}`);
+            }
+
+            return {
+                httpsAgent: ProxyHelper.socksAgent,
+                timeout: this.config.timeout
+            };
+        } else {
+            console.error(`Unsupported proxy type: ${this.config.type}. Only SOCKS5 is supported.`);
+            return {};
+        }
     }
 
     /**
@@ -96,6 +112,8 @@ export class ProxyHelper {
      */
     public updateConfig(newConfig: ProxyConfig): void {
         this.config = newConfig;
+        // 重置agent以便使用新配置
+        ProxyHelper.socksAgent = null;
     }
 
     /**

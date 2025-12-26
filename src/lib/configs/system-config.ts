@@ -5,6 +5,10 @@ import yaml from 'yaml';
 import _ from 'lodash';
 
 import environment from '../environment.ts';
+import dotenv from 'dotenv';
+
+// 加载环境变量
+dotenv.config();
 
 const CONFIG_PATH = path.join(path.resolve(), 'configs/', environment.env, "/system.yml");
 
@@ -106,10 +110,63 @@ export class SystemConfig {
         return path.resolve(this.logDir);
     }
 
+    /**
+     * 从环境变量获取值
+     */
+    private static getEnvValue(key: string, defaultValue: any): any {
+        const envKey = key.toUpperCase();
+        if (process.env[envKey] !== undefined) {
+            // 尝试转换类型
+            const value = process.env[envKey];
+            if (value === 'true') return true;
+            if (value === 'false') return false;
+            if (/^\d+$/.test(value)) return parseInt(value, 10);
+            return value;
+        }
+        return defaultValue;
+    }
+
     static load() {
-        if (!fs.pathExistsSync(CONFIG_PATH)) return new SystemConfig();
-        const data = yaml.parse(fs.readFileSync(CONFIG_PATH).toString());
-        return new SystemConfig(data);
+        let config: any = {};
+
+        // 1. 首先尝试加载配置文件
+        if (fs.pathExistsSync(CONFIG_PATH)) {
+            config = yaml.parse(fs.readFileSync(CONFIG_PATH).toString());
+        }
+
+        // 2. 从环境变量覆盖配置（环境变量优先级更高）
+        const envConfig = {
+            requestLog: this.getEnvValue('PROXY_REQUEST_LOG', config.requestLog),
+            tmpDir: this.getEnvValue('PROXY_TMP_DIR', config.tmpDir),
+            logDir: this.getEnvValue('PROXY_LOG_DIR', config.logDir),
+            logWriteInterval: this.getEnvValue('PROXY_LOG_WRITE_INTERVAL', config.logWriteInterval),
+            logFileExpires: this.getEnvValue('PROXY_LOG_FILE_EXPIRES', config.logFileExpires),
+            tmpFileExpires: this.getEnvValue('PROXY_TMP_FILE_EXPIRES', config.tmpFileExpires),
+            debug: this.getEnvValue('PROXY_DEBUG', config.debug),
+            log_level: this.getEnvValue('PROXY_LOG_LEVEL', config.log_level),
+            proxy: {
+                enabled: this.getEnvValue('PROXY_ENABLED', config.proxy?.enabled || false),
+                host: this.getEnvValue('PROXY_HOST', config.proxy?.host || ''),
+                port: this.getEnvValue('PROXY_PORT', config.proxy?.port || 0),
+                type: this.getEnvValue('PROXY_TYPE', config.proxy?.type || 'socks5'),
+                auth: {
+                    username: this.getEnvValue('PROXY_AUTH_USERNAME', config.proxy?.auth?.username || ''),
+                    password: this.getEnvValue('PROXY_AUTH_PASSWORD', config.proxy?.auth?.password || '')
+                },
+                bypass: this.getEnvValue('PROXY_BYPASS', config.proxy?.bypass || []).toString().split(',').map((s: string) => s.trim()),
+                timeout: this.getEnvValue('PROXY_TIMEOUT', config.proxy?.timeout || 10000)
+            }
+        };
+
+        // 深度合并环境变量配置
+        config = _.mergeWith({}, config, envConfig, (objValue, srcValue) => {
+            if (_.isArray(srcValue)) {
+                return srcValue;
+            }
+            return srcValue;
+        });
+
+        return new SystemConfig(config);
     }
 
 }

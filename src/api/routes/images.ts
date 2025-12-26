@@ -6,6 +6,7 @@ import { generateImages, generateImageComposition } from "@/api/controllers/imag
 import { DEFAULT_IMAGE_MODEL } from "@/api/consts/common.ts";
 import { tokenSplit } from "@/api/controllers/core.ts";
 import util from "@/lib/util.ts";
+import logger from "@/lib/logger.ts";
 
 export default {
   prefix: "/v1/images",
@@ -172,6 +173,14 @@ export default {
         intelligentRatio: finalIntelligentRatio,
       }, token);
 
+      
+      logger.info(`图像合成结果: 成功生成 ${resultUrls.length} 张合成图片`);
+      logger.info(`合成图片的详细信息: ${JSON.stringify(resultUrls)}`);
+      resultUrls.forEach((url, index) => {
+        logger.info(`合成图片 ${index + 1} URL: ${url}`);
+      });
+      
+
       let data = [];
       if (responseFormat == "b64_json") {
         data = (
@@ -182,6 +191,8 @@ export default {
           url,
         }));
       }
+
+      logger.info(`响应格式: ${JSON.stringify(data)}`);
 
       return {
         created: util.unixTimestamp(),

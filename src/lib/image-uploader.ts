@@ -120,32 +120,62 @@ export async function uploadImageBuffer(
 
     logger.info(`准备上传图片: uploadUrl=${uploadUrl}`);
 
-    // 第三步：上传图片文件
+    // 第三步：上传图片文件（带重试机制）
     let uploadResponse;
-    try {
-      uploadResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          'Accept': '*/*',
-          'Accept-Language': 'zh-CN,zh;q=0.9',
-          'Authorization': auth,
-          'Connection': 'keep-alive',
-          'Content-CRC32': crc32,
-          'Content-Disposition': 'attachment; filename="undefined"',
-          'Content-Type': 'application/octet-stream',
-          'Origin': origin,
-          'Referer': RegionUtils.getRefererPath(regionInfo),
-          'Sec-Fetch-Dest': 'empty',
-          'Sec-Fetch-Mode': 'cors',
-          'Sec-Fetch-Site': 'cross-site',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
-        },
-        body: imageBuffer,
-      });
-    } catch (fetchError: any) {
-      logger.error(`图片文件上传fetch请求失败，目标URL: ${uploadUrl}`);
-      logger.error(`错误详情: ${fetchError.message}`);
-      throw new Error(`图片上传网络请求失败 (${uploadHost}): ${fetchError.message}. 请检查网络连接`);
+    const maxRetries = 3;
+    let uploadAttempt = 0;
+
+    while (uploadAttempt < maxRetries) {
+      uploadAttempt++;
+      try {
+        logger.info(`尝试上传图片 (第${uploadAttempt}/${maxRetries}次): ${uploadHost}`);
+
+        // 创建AbortController用于超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 30000); // 30秒超时
+
+        uploadResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Accept': '*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Authorization': auth,
+            'Connection': 'keep-alive',
+            'Content-CRC32': crc32,
+            'Content-Disposition': 'attachment; filename="undefined"',
+            'Content-Type': 'application/octet-stream',
+            'Origin': origin,
+            'Referer': RegionUtils.getRefererPath(regionInfo),
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'cross-site',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+          },
+          body: imageBuffer,
+          signal: controller.signal,
+        });
+
+        // 清除超时定时器
+        clearTimeout(timeoutId);
+
+        // 如果成功，跳出重试循环
+        break;
+
+      } catch (fetchError: any) {
+        logger.error(`图片文件上传失败 (第${uploadAttempt}/${maxRetries}次): ${fetchError.message}`);
+
+        if (uploadAttempt >= maxRetries) {
+          logger.error(`图片文件上传fetch请求失败，目标URL: ${uploadUrl}`);
+          logger.error(`错误详情: ${fetchError.message}`);
+          throw new Error(`图片上传网络请求失败 (${uploadHost}): ${fetchError.message}. 请检查网络连接`);
+        }
+
+        // 重试前等待
+        logger.info(`等待 ${uploadAttempt * 2} 秒后重试...`);
+        await new Promise(resolve => setTimeout(resolve, uploadAttempt * 2000));
+      }
     }
 
     if (!uploadResponse.ok) {
@@ -155,51 +185,106 @@ export async function uploadImageBuffer(
 
     logger.info(`图片文件上传成功`);
 
-    // 第四步：提交上传
+    // 第四步：提交上传（带重试机制）
     const commitUrl = `${applyUrlHost}/?Action=CommitImageUpload&Version=2018-08-01&ServiceId=${actualServiceId}`;
-    const commitTimestamp = new Date().toISOString().replace(/[:\-]/g, '').replace(/\.\d{3}Z$/, 'Z');
-    const commitPayload = JSON.stringify({
-      SessionKey: uploadAddress.SessionKey
-    });
-
-    const payloadHash = crypto.createHash('sha256').update(commitPayload, 'utf8').digest('hex');
-
-    const commitRequestHeaders = {
-      'x-amz-date': commitTimestamp,
-      'x-amz-security-token': session_token,
-      'x-amz-content-sha256': payloadHash
-    };
-
-    const commitAuthorization = createSignature('POST', commitUrl, commitRequestHeaders, access_key_id, secret_access_key, session_token, commitPayload, awsRegion);
+    logger.info(`准备提交上传: ${commitUrl}`);
 
     let commitResponse;
-    try {
-      commitResponse = await fetch(commitUrl, {
-        method: 'POST',
-        headers: {
-          'accept': '*/*',
-          'accept-language': 'zh-CN,zh;q=0.9',
-          'authorization': commitAuthorization,
-          'content-type': 'application/json',
-          'origin': origin,
-          'referer': RegionUtils.getRefererPath(regionInfo),
-          'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
-          'sec-ch-ua-mobile': '?0',
-          'sec-ch-ua-platform': '"Windows"',
-          'sec-fetch-dest': 'empty',
-          'sec-fetch-mode': 'cors',
-          'sec-fetch-site': 'cross-site',
-          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+    const maxCommitRetries = 3;
+    let commitAttempt = 0;
+
+    while (commitAttempt < maxCommitRetries) {
+      commitAttempt++;
+
+      try {
+        logger.info(`尝试提交上传 (第${commitAttempt}/${maxCommitRetries}次): ${commitUrl}`);
+
+        // 每次重试都需要重新生成签名和时间戳
+        const commitTimestamp = new Date().toISOString().replace(/[:\-]/g, '').replace(/\.\d{3}Z$/, 'Z');
+        const commitPayload = JSON.stringify({
+          SessionKey: uploadAddress.SessionKey
+        });
+
+        const payloadHash = crypto.createHash('sha256').update(commitPayload, 'utf8').digest('hex');
+
+        const commitRequestHeaders = {
           'x-amz-date': commitTimestamp,
           'x-amz-security-token': session_token,
-          'x-amz-content-sha256': payloadHash,
-        },
-        body: commitPayload,
-      });
-    } catch (fetchError: any) {
-      logger.error(`提交上传fetch请求失败，目标URL: ${commitUrl}`);
-      logger.error(`错误详情: ${fetchError.message}`);
-      throw new Error(`提交上传网络请求失败 (${applyUrlHost}): ${fetchError.message}. 请检查网络连接`);
+          'x-amz-content-sha256': payloadHash
+        };
+
+        const commitAuthorization = createSignature('POST', commitUrl, commitRequestHeaders, access_key_id, secret_access_key, session_token, commitPayload, awsRegion);
+
+        // 创建AbortController用于超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 30000); // 30秒超时
+
+        commitResponse = await fetch(commitUrl, {
+          method: 'POST',
+          headers: {
+            'accept': '*/*',
+            'accept-language': 'zh-CN,zh;q=0.9',
+            'authorization': commitAuthorization,
+            'content-type': 'application/json',
+            'origin': origin,
+            'referer': RegionUtils.getRefererPath(regionInfo),
+            'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'cross-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+            'x-amz-date': commitTimestamp,
+            'x-amz-security-token': session_token,
+            'x-amz-content-sha256': payloadHash,
+          },
+          body: commitPayload,
+          signal: controller.signal,
+        });
+
+        // 清除超时定时器
+        clearTimeout(timeoutId);
+
+        // 如果成功，跳出重试循环
+        if (commitResponse.ok) {
+          logger.info(`提交上传成功: ${commitUrl}`);
+          break;
+        } else {
+          // HTTP错误也重试
+          const errorText = await commitResponse.text();
+          logger.error(`提交上传HTTP错误 (第${commitAttempt}/${maxCommitRetries}次): ${commitResponse.status} - ${errorText}`);
+
+          if (commitAttempt >= maxCommitRetries) {
+            throw new Error(`提交上传失败: ${commitResponse.status} - ${errorText}`);
+          }
+        }
+
+      } catch (fetchError: any) {
+        logger.error(`提交上传fetch请求失败 (第${commitAttempt}/${maxCommitRetries}次): ${fetchError.message}`);
+        logger.error(`目标URL: ${commitUrl}`);
+
+        if (commitAttempt >= maxCommitRetries) {
+          logger.error(`提交上传fetch请求最终失败，目标URL: ${commitUrl}`);
+          logger.error(`错误详情: ${fetchError.message}`);
+          throw new Error(`提交上传网络请求失败 (${applyUrlHost}): ${fetchError.message}. 请检查网络连接`);
+        }
+
+        // 检查是否为网络错误，增加更长的等待时间
+        const isNetworkError = ['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'fetch failed'].some(err =>
+          fetchError.message.includes(err) || fetchError.cause?.message?.includes(err)
+        );
+
+        if (isNetworkError) {
+          logger.info(`检测到网络错误，将在 ${commitAttempt * 3} 秒后重试...`);
+          await new Promise(resolve => setTimeout(resolve, commitAttempt * 3000));
+        } else {
+          logger.info(`等待 ${commitAttempt * 2} 秒后重试...`);
+          await new Promise(resolve => setTimeout(resolve, commitAttempt * 2000));
+        }
+      }
     }
 
     if (!commitResponse.ok) {
@@ -234,7 +319,7 @@ export async function uploadImageBuffer(
 
 /**
  * 从URL下载并上传图片
- * @param imageUrl 图片URL
+ * @param imageUrl 图片URL (支持 http://, https://, data:image/...;base64,...)
  * @param refreshToken 刷新令牌
  * @param regionInfo 区域信息
  * @returns 图片URI
@@ -245,6 +330,19 @@ export async function uploadImageFromUrl(
   regionInfo: RegionInfo
 ): Promise<string> {
   try {
+    // 处理 base64 格式的图片 (data:image/...;base64,...)
+    if (util.isBASE64Data(imageUrl)) {
+      logger.info(`检测到base64格式图片，直接转换`);
+
+      const base64Data = util.removeBASE64DataHeader(imageUrl);
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+
+      logger.info(`base64图片转换完成，大小: ${imageBuffer.length}字节`);
+
+      return await uploadImageBuffer(imageBuffer, refreshToken, regionInfo);
+    }
+
+    // 处理普通URL图片
     logger.info(`开始从URL下载并上传图片: ${imageUrl}`);
 
     const imageResponse = await fetch(imageUrl);

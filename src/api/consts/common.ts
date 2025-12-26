@@ -2,12 +2,12 @@
  * 即梦API通用常量
  */
 
-// API基础URL
-export const BASE_URL_CN = "https://jimeng.jianying.com";
+// API基础URL - 支持环境变量镜像替换
+export const BASE_URL_CN = process.env.JIMENG_CN_MIRROR || "https://jimeng.jianying.com";
 
-export const BASE_URL_US_COMMERCE = "https://commerce.us.capcut.com";
-export const BASE_URL_HK_COMMERCE = "https://commerce-api-sg.capcut.com";
-export const BASE_URL_HK = "https://mweb-api-sg.capcut.com";
+export const BASE_URL_US_COMMERCE = process.env.COMMERCE_US_MIRROR || "https://commerce.us.capcut.com";
+export const BASE_URL_HK_COMMERCE = process.env.COMMERCE_HK_MIRROR || "https://commerce-api-sg.capcut.com";
+export const BASE_URL_HK = process.env.DREAMINA_HK_API_MIRROR || "https://mweb-api-sg.capcut.com";
 
 // 默认助手ID
 export const DEFAULT_ASSISTANT_ID_CN = 513695;

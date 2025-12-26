@@ -1,4 +1,8 @@
 import logger from './logger.js';
+import dotenv from 'dotenv';
+
+// 加载 .env 文件（如果存在）
+dotenv.config();
 
 // 允许无限量的监听器
 process.setMaxListeners(Infinity);

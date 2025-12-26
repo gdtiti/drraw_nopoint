@@ -1,0 +1,55 @@
+/**
+ * @swagger
+ * /v1/chat/completions:
+ *   post:
+ *     tags:
+ *       - Chat
+ *     summary: 智能对话
+ *     description: |
+ *       兼容OpenAI格式的智能对话接口，支持流式和非流式响应。
+ *
+ *       ## 特性说明
+ *       - 完全兼容OpenAI API格式
+ *       - 支持流式响应（Server-Sent Events）
+ *       - 多轮对话上下文管理
+ *       - 灵活的模型选择
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ChatCompletionRequest'
+ *           examples:
+ *             标准对话:
+ *               value:
+ *                 model: "jimeng-chat"
+ *                 messages:
+ *                   - role: "user"
+ *                     content: "你好，请介绍一下你自己"
+ *                 stream: false
+ *             流式对话:
+ *               value:
+ *                 model: "jimeng-chat"
+ *                 messages:
+ *                   - role: "user"
+ *                     content: "写一首关于春天的诗"
+ *                 stream: true
+ *     responses:
+ *       200:
+ *         description: 对话完成
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ChatCompletionResponse'
+ *       400:
+ *         description: 请求参数错误
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: 未授权访问
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'

@@ -219,6 +219,18 @@ export class SmartPoller {
         
       } catch (error) {
         logger.error(`轮询过程中发生错误: ${error.message}`);
+
+        // 对于网络连接错误，增加重试机制
+        const networkErrors = ['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND'];
+        const isNetworkError = networkErrors.some(err => error.message.includes(err));
+
+        if (isNetworkError && this.pollCount < 5) {
+          // 网络错误且重试次数少于5次，等待后重试
+          logger.info(`网络错误，将在3秒后重试 (${this.pollCount}/5): ${error.message}`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          continue;
+        }
+
         throw error;
       }
     }

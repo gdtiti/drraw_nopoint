@@ -356,9 +356,10 @@ export async function request(
       logger.error(`请求失败 (尝试 ${retries + 1}/${maxRetries + 1}): ${error.message}`);
 
       // 如果是网络错误或超时，尝试重试
-      if ((error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' ||
+      if ((error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET' ||
            error.message.includes('timeout') || error.message.includes('network')) &&
           retries < maxRetries) {
+        logger.info(`网络错误，将���行第 ${retries + 1} 次重试: ${error.code || error.message}`);
         retries++;
         continue;
       }
@@ -464,7 +465,7 @@ export async function uploadFile(
 
     // 获取上传凭证
     logger.info(`请求上传凭证，场景: ${isVideoImage ? 'video_cover' : 'aigc_image'}`);
-    const uploadProofUrl = 'https://imagex.bytedanceapi.com/';
+    const uploadProofUrl = (process.env.IMAGEX_CN_MIRROR || 'https://imagex.bytedanceapi.com') + '/';
     const proofResult = await request(
       'POST',
       '/mweb/v1/get_upload_image_proof',
